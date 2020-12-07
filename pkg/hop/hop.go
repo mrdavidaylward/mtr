@@ -12,6 +12,7 @@ import (
 )
 
 type HopStatistic struct {
+	app            string
 	Dest           *net.IPAddr
 	Timeout        time.Duration
 	PID            int
@@ -69,6 +70,7 @@ func (s *HopStatistic) Next(srcAddr string) {
 func (h *HopStatistic) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		Sent             int       `json:"sent"`
+		app              string    `json:"app"`
 		Target           string    `json:"target"`
 		Last             float64   `json:"last_ms"`
 		Best             float64   `json:"best_ms"`
@@ -84,9 +86,9 @@ func (h *HopStatistic) MarshalJSON() ([]byte, error) {
 		Loss:             h.Loss(),
 		Target:           h.Target,
 		PacketBufferSize: h.RingBufferSize,
-		Last:             h.Last.Elapsed.Seconds() * 1000,
-		Best:             h.Best.Elapsed.Seconds() * 1000,
-		Worst:            h.Worst.Elapsed.Seconds() * 1000,
+		Last:             h.Last.Elapsed.Seconds(),
+		Best:             h.Best.Elapsed.Seconds(),
+		Worst:            h.Worst.Elapsed.Seconds(),
 		Avg:              h.Avg(),
 		Packets:          h.packets(),
 	})
@@ -146,8 +148,10 @@ func (h *HopStatistic) Render(ptrLookup bool) {
 		}
 		i--
 	})
-	l := fmt.Sprintf("%d", h.RingBufferSize)
-	gm.Printf("%3d:|-- %-20s  %5.1f%%  %4d  %6.1f  %6.1f  %6.1f  %6.1f  %"+l+"s\n",
+
+	gm.Printf("mtr,Dest=%s,DestName=%s,hopNumber=%d,destinationAddress=%s packetLossPercentage=%f%%,sentPackets=%d,latencyLast=%f,latencyAvg=%f,latencyMin=%f,sentMax=%f \n",
+		h.Dest,
+		h.app,
 		h.TTL,
 		fmt.Sprintf("%.20s", h.lookupAddr(ptrLookup)),
 		h.Loss(),
@@ -156,7 +160,6 @@ func (h *HopStatistic) Render(ptrLookup bool) {
 		h.Avg(),
 		h.Best.Elapsed.Seconds()*1000,
 		h.Worst.Elapsed.Seconds()*1000,
-		packets,
 	)
 }
 
