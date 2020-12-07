@@ -14,6 +14,7 @@ import (
 )
 
 type MTR struct {
+	app            string `json: "app"`
 	SrcAddress     string `json:"source"`
 	mutex          *sync.RWMutex
 	timeout        time.Duration
@@ -28,7 +29,7 @@ type MTR struct {
 }
 
 func NewMTR(addr, srcAddr string, timeout time.Duration, interval time.Duration,
-	hopsleep time.Duration, maxHops, maxUnknownHops, ringBufferSize int, ptr bool) (*MTR, chan struct{}, error) {
+	hopsleep time.Duration, maxHops, maxUnknownHops, ringBufferSize int, ptr bool, app string) (*MTR, chan struct{}, error) {
 	if net.ParseIP(addr) == nil {
 		addrs, err := net.LookupHost(addr)
 		if err != nil || len(addrs) == 0 {
@@ -44,6 +45,7 @@ func NewMTR(addr, srcAddr string, timeout time.Duration, interval time.Duration,
 		}
 	}
 	return &MTR{
+		app:            app,
 		SrcAddress:     srcAddr,
 		interval:       interval,
 		timeout:        timeout,
@@ -81,8 +83,6 @@ func (m *MTR) registerStatistic(ttl int, r icmp.ICMPReturn) *hop.HopStatistic {
 
 func (m *MTR) Render(offset int) {
 	gm.MoveCursor(1, offset)
-	l := fmt.Sprintf("%d", m.ringBufferSize)
-	gm.Printf("HOP:    %-20s  %5s%%  %4s  %6s  %6s  %6s  %6s  %"+l+"s\n", "Address", "Loss", "Sent", "Last", "Avg", "Best", "Worst", "Packets")
 	for i := 1; i <= len(m.Statistic); i++ {
 		gm.MoveCursor(1, offset+i)
 		m.mutex.RLock()
